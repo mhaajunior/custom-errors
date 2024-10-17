@@ -2,13 +2,16 @@ stages:
   - build
   - deploy
 
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+
 build_image:
   stage: build
   image: docker:20.10.16
   services:
     - docker:20.10.16-dind
-  variables:
-    DOCKER_TLS_CERTDIR: "/certs"
   script:
     - docker-compose build
   only:
@@ -22,8 +25,9 @@ deploy:
   before_script:
     - apk add --no-cache openssh-client git
     - eval $(ssh-agent -s)
-    - chmod 400 $SSH_KEY
-    - echo "$SSH_KEY" | tr -d '\r' | ssh-add
+    - echo "$SSH_KEY" > id_rsa
+    - chmod 400 id_rsa
+    - ssh-add id_rsa
   script:
     - ssh -v -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "
       cd /opt/docker/custom-errors &&
