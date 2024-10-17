@@ -42,7 +42,6 @@ build_image:
 deploy:
   stage: deploy
   image: alpine:latest
-  network_mode: "host"
   before_script:
     - chmod 400 $SSH_KEY
     - apk add --no-cache openssh-client rsync
