@@ -1,0 +1,61 @@
+# test ไม่จำเป็นก็ได้
+
+# build
+# 1. สร้าง account docker hub นำชื่อ user และ repository ที่สร้างมาเป็น IMAGE_NAME ส่วน IMAGE_TAG ตั้งอะไรก็ได้
+# 2. สร้าง docker in docker โดยใช้ docker image และ docker daemon ด้วย services
+# 3. กำหนด certs เพื่อให้ docker image และ daemon สื่อสารกันภายในได้
+# 4. login เข้า  docker hub ด้วย username และ password ซึ่งเก็บค่าไว้ใน env variable ของ gitlab ติ้ก mask ด้วย
+# 5. ทำการ build และ push image ที่สร้างไปยัง docker hub
+
+# deploy
+# 1. ใช้คำสัง ssh-keygen สร้าง ssh keypairs เก็บไว้ และเลือกที่อยู่ที่จะเก็บไฟล์ (/Users/[users]/.ssh/[project]_key)
+# 2. ls /Users/[users]/.ssh
+# 3. copy ssh public key โดย cat [project]_key.pub
+# 4. นำ ssh key ไปใส่ใน deployment server ของเรา (ยังไม่แน่ใจต้องทำไง)
+# 5. install docker บน deployment server
+# 6. ใส่ ssh private key ใน env variable ของ gitlab โดย cat ~/.ssh/[project]_key โดยเลือก type เป็น File
+# 7. ใน script ทำการ login เข้า server ด้วย ssh key โดยไม่ต้องตรวจสอบ host และระบุ [root_user]@[public_ip_address]
+# 8. docker login สำหรับ pull image จาก docker hub
+# 9. หยุดและลบ docker container อันเก่าออกก่อน
+# 10. docker run image เป็น background โดย set port เป็น [port ของ host server]:[port ของ docker container]
+# 11. กำหนดสิทธิที่เหมาะสมสำหรับการเข้าถึง ssh key ของ server ใน before_script
+
+# ถ้าจะให้ run gitlab ci ใน branch เฉพาะ ให้ดูเรื่อง workflow: rules
+# เช่น rules: - if: $CI_COMMIT_BRANCH == "main" ($CI_DEFAULT_BRANCH)
+
+stages:
+  - build
+  - deploy
+
+build_image:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  script:
+    - docker-compose build
+  only:
+    - main
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - chmod 400 $SSH_KEY
+  script:
+    - apk add --no-cache openssh-client rsync # ติดตั้ง SSH client
+    - eval $(ssh-agent -s) # เริ่ม agent
+    - ssh -o StrictHostKeyChecking=no -i $SSH_KEY $SSH_USER@$SSH_HOST "
+      cd /opt/docker/custom-errors &&
+      git pull origin main &&
+      docker-compose down &&
+      docker-compose up -d --build &&
+      docker-compose ps &&
+      docker-compose logs -f"
+  only:
+    - main
+  environment:
+    name: production
+  when: manual # กด deploy ได้เองใน GitLab
