@@ -22,7 +22,7 @@ deploy:
   before_script:
     - apk add --no-cache openssh-client git
     - eval $(ssh-agent -s) # เริ่ม ssh-agent
-    - echo "$SSH_KEY" > temp_key # สร้างไฟล์ชั่วคราวสำหรับ SSH key
+    - echo "$SSH_KEY" | tr -d '\r' > temp_key # สร้างไฟล์ชั่วคราวสำหรับ SSH key
     - chmod 400 temp_key # ตั้งค่า permission ให้ไฟล์ชั่วคราว
     - ssh-add temp_key # เพิ่ม SSH key
     - rm temp_key # ลบไฟล์ชั่วคราว
