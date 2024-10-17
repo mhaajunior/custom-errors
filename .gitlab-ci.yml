@@ -3,7 +3,6 @@ stages:
   - deploy
 
 variables:
-  DOCKER_TLS_CERTDIR: "/certs"
   DOCKER_HOST: tcp://docker:2375
   DOCKER_DRIVER: overlay2
 
@@ -12,6 +11,10 @@ build_image:
   image: docker:20.10.16
   services:
     - docker:20.10.16-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - docker info # Check if the Docker daemon is available
   script:
     - docker-compose build
   only:
