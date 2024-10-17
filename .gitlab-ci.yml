@@ -11,9 +11,11 @@ build_image:
   image: docker:20.10.16
   services:
     - docker:20.10.16-dind
+      command:["--host=tcp://0.0.0.0:2375"]
   variables:
-    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_TLS_CERTDIR: ""
   script:
+    - docker info
     - docker-compose build
   only:
     - main
