@@ -2,20 +2,14 @@ stages:
   - build
   - deploy
 
-variables:
-  DOCKER_HOST: tcp://docker:2375/
-  DOCKER_DRIVER: overlay2
-
 build_image:
   stage: build
   image: docker:20.10.16
   services:
     - docker:20.10.16-dind
-      command:["--host=tcp://0.0.0.0:2375"]
   variables:
-    DOCKER_TLS_CERTDIR: ""
+    DOCKER_TLS_CERTDIR: "/certs"
   script:
-    - docker info
     - docker-compose build
   only:
     - main
