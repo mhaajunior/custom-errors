@@ -45,10 +45,11 @@ deploy:
   network_mode: "host"
   before_script:
     - chmod 400 $SSH_KEY
+    - apk add --no-cache openssh-client rsync
+    - eval $(ssh-agent -s)
+    - echo "$SSH_KEY" | tr -d '\r' | ssh-add - > /dev/null
   script:
-    - apk add --no-cache openssh-client rsync # ติดตั้ง SSH client
-    - eval $(ssh-agent -s) # เริ่ม agent
-    - ssh -o StrictHostKeyChecking=no -i $SSH_KEY $SSH_USER@$SSH_HOST "
+    - ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "
       cd /opt/docker/custom-errors &&
       git pull origin main &&
       docker-compose down &&
